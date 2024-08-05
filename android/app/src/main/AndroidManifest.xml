@@ -43,6 +43,13 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+<!--        <provider android:authorities="com.hulu.livingroomplus" />-->
+<!--        <provider android:authorities="com.britbox.us" />-->
+<!--        <provider android:authorities="com.netflix.ninja" />-->
+<!--        <provider android:authorities="com.amazon.amazonvideo.livingroom" />-->
+<!--        <provider android:authorities="com.amcplus.amcandroidtv" />-->
+<!--        <provider android:authorities="com.wbd.stream" />-->
+<!--        <provider android:authorities="com.apple.atve.androidtv.appletv" />-->
     </queries>
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false"/>
@@ -56,4 +63,17 @@
     <!-- Some TV devices have an ethernet connection only -->
     <uses-feature android:name="android.hardware.wifi" android:required="false"/>
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+<!--    <queries>-->
+<!--        <provider android:authorities="com.hulu.livingroomplus" />-->
+<!--        <provider android:authorities="com.britbox.us" />-->
+<!--        <provider android:authorities="com.netflix.ninja" />-->
+<!--        <provider android:authorities="com.amazon.amazonvideo.livingroom" />-->
+<!--        <provider android:authorities="com.amcplus.amcandroidtv" />-->
+<!--        <provider android:authorities="com.wbd.stream" />-->
+<!--        <provider android:authorities="com.apple.atve.androidtv.appletv" />-->
+
+
+<!--    </queries>-->
 </manifest>

@@ -42,8 +42,12 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   trakt_dart: ^1.0.1
   envied: ^0.5.4+1
+  flip_card: ^0.7.0
+  android_intent_plus: ^5.0.2
+  shared_preferences: ^2.2.3
+  enum_to_string: ^2.0.1
 
-
+  qr_flutter: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

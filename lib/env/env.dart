@@ -10,6 +10,6 @@ final class Env {
   @EnviedField(varName: 'TRAKT_CLIENT_SECRET',obfuscate: true)
   static final String traktClientSecret = _Env.traktClientSecret;
 
-  @EnviedField(varName: 'WATCHLIST_API',obfuscate: true)
-  static final String watchlistApi = _Env.watchlistApi;
+  @EnviedField(varName: 'WATCHLIST_BASE',obfuscate: true)
+  static final String watchlistBase = _Env.watchlistBase;
 }

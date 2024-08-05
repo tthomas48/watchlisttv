@@ -1,8 +1,5 @@
 import 'dart:async';
 
-import 'package:cookie_jar/cookie_jar.dart';
-import 'package:dio/dio.dart';
-import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:trakt_dart/trakt_dart.dart';
 import 'package:watchlisttv/services/token_service.dart';
 
@@ -13,8 +10,8 @@ class TraktClient {
   final TraktManager client;
   final TokenService tokenService;
 
-  static TraktManager CreateDefaultClient(String clientId, String clientSecret) {
-    final traktManager = new TraktManager(
+  static TraktManager CreateDefaultClient() {
+    final traktManager = TraktManager(
       clientId: Env.traktClientId,
       clientSecret: Env.traktClientSecret,
       redirectURI: 'urn:ietf:wg:oauth:2.0:oob',
@@ -31,7 +28,7 @@ class TraktClient {
 
   Future<AccessTokenResponse> pollDevice(CancellationToken cancellationToken, String code, int interval) {
     final Completer<AccessTokenResponse> completer = Completer<AccessTokenResponse>();
-    Timer.periodic(Duration(seconds: 2), (Timer timer) {
+    Timer.periodic(const Duration(seconds: 2), (Timer timer) async {
       if (cancellationToken.isCancelled) {
         timer.cancel();
         completer.completeError("manually cancelled by owner");
@@ -39,10 +36,9 @@ class TraktClient {
       }
 
       try {
-        client.authentication.getDeviceAccessToken(code).then((res) {
-          timer.cancel();
-          completer.complete(res);
-        });
+        final res = await client.authentication.getDeviceAccessToken(code);
+        timer.cancel();
+        completer.complete(res);
       } on TraktManagerAPIError catch (e) {
         if (e.statusCode == 400) {
           // pending, just return

@@ -4,13 +4,14 @@ Provide a trakt.tv watchlist
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+Build the env file after changes:
 
-A few resources to get you started if this is your first Flutter project:
+```
+flutter pub run build_runner build -d 
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Building for install on TV
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+flutter build apk --dart-define-from-file=.env
+```
