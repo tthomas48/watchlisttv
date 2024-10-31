@@ -6,6 +6,6 @@ class Watchlist {
 
   Watchlist(Map<String, dynamic> map) {
     name = map['name'];
-    id = map['ids']['slug'];
+    id = map['ids']['trakt'].toString();
   }
 }

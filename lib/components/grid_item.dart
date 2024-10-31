@@ -6,13 +6,11 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flip_card/flip_card_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flip_card/flip_card.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../env/env.dart';
 import '../model/item.dart';
 import '../services/watchlist_client.dart';
-import '../theme/theme_colors.dart';
+import 'grid_flipcard.dart';
 
 class GridItem extends StatefulWidget {
   final Item item;
@@ -34,11 +32,7 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
 
   final WatchlistClient watchlistClient;
 
-  final bool _isFront = true;
-
   bool _isFocused = false;
-
-  bool _isKeyPressed = false;
 
   bool _isLongPress = false;
 
@@ -127,7 +121,6 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
                 }
                 if (event is KeyDownEvent) {
                   // Start timer when key is pressed down
-                  _isKeyPressed = true;
                   _longPressTimer ??= Timer(const Duration(milliseconds: 500), () {
                       setState(() {
                         _isLongPress = true;
@@ -136,14 +129,11 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
                     });
                 } else if (event is KeyUpEvent) {
                   if (_isLongPress) {
-                    print('Long press detected');
                     _flipCard();
                   } else {
-                    print('Normal press"');
                     _play();
                   }
                   // Cancel timer when key is released
-                  _isKeyPressed = false;
                   if (_longPressTimer != null) {
                     _longPressTimer?.cancel();
                     _longPressTimer = null;
@@ -155,7 +145,6 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
                 return KeyEventResult.handled;
               },
               onFocusChange: (hasFocus) {
-                print("Focused ${item.title}");
                 setState(() {
                   _isFocused = hasFocus;
                   if (hasFocus) {
@@ -167,175 +156,22 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
               },
               child: GestureDetector(
                   onTap: () {
-                    print('Card tapped!');
+                    // card tapped
                   },
                   onLongPress: () {
                     _flipCard();
                   },
-                  child: _createFlipper(baseImgUrl, editUrl, snapshot.data)));
+                  child: GridFlipCard(
+                    flipCardController: _flipCardController,
+                    animation: _animation,
+                    isFocused: _isFocused,
+                    baseImgUrl: baseImgUrl,
+                    editUrl: editUrl,
+                    item: item,
+                    cookie: snapshot.data,
+                  )
+          )
+          );
         });
-  }
-
-  Widget _createFlipper(String baseImgUrl, String editUrl, String? cookie) {
-    return FlipCard(
-      controller: _flipCardController,
-      flipOnTouch: false,
-      fill: Fill.fillBack, // Fill the back side of the card to make in the same size as the front.
-      direction: FlipDirection.HORIZONTAL, // default
-      side: CardSide.FRONT, // The side to initially display.
-      front: Container(
-        child: _createCardFront(baseImgUrl, cookie),
-      ),
-      back: Container(
-        child: _createCardBack(editUrl),
-      ),
-    );
-  }
-
-  Widget _createCardFront(String baseImgUrl, String? cookie) {
-    return Card(
-      color: ThemeColors.backgroundColor,
-      semanticContainer: true,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 5,
-      margin: const EdgeInsets.all(10),
-      child: ScaleTransition(
-          scale: _animation,
-          child: Container(
-            width: 300,
-            height: 200,
-            decoration: BoxDecoration(
-              // borderRadius: BorderRadius.circular(10),
-              border: _isFocused
-                  ? Border.all(color: ThemeColors.primaryColor, width: 1)
-                  : Border.all(color: Colors.transparent, width: 1),
-              boxShadow: _isFocused
-                  ? [
-                      BoxShadow(
-                          color: ThemeColors.accentColor.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 10)
-                    ]
-                  : [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          spreadRadius: 2,
-                          blurRadius: 5)
-                    ],
-            ),
-            child: Stack(
-              children: [
-                // Background Image
-                Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    image: DecorationImage(
-                      image: NetworkImage('$baseImgUrl/${item.id ?? ''}',
-                          headers: {
-                            'Cookie': cookie ?? '',
-                          }),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                // Text Title at the bottom
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    color:
-                        _isFocused ? ThemeColors.accentColor : Colors.black54,
-                    child: Text(
-                      item.title,
-                      style: TextStyle(
-                        color: _isFocused ? Colors.black54 : Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )),
-    );
-  }
-
-  Widget _createCardBack(String editUrl) {
-    return Card(
-      color: ThemeColors.backgroundColor,
-      semanticContainer: true,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 5,
-      margin: const EdgeInsets.all(10),
-      child: ScaleTransition(
-          scale: _animation,
-          child: Container(
-            width: 300,
-            height: 200,
-            decoration: BoxDecoration(
-              // borderRadius: BorderRadius.circular(10),
-              border: _isFocused
-                  ? Border.all(color: ThemeColors.primaryColor, width: 1)
-                  : Border.all(color: Colors.transparent, width: 1),
-              boxShadow: _isFocused
-                  ? [
-                BoxShadow(
-                    color: ThemeColors.accentColor.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 10)
-              ]
-                  : [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 2,
-                    blurRadius: 5)
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Background Image
-                QrImageView(
-                  data: '$editUrl/${item.id ?? ''}',
-                  version: QrVersions.auto,
-                  size: 300.0,
-                ),
-                // Text Title at the bottom
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    color:
-                    _isFocused ? ThemeColors.accentColor : Colors.black54,
-                    child: Text(
-                      "Edit",
-                      style: TextStyle(
-                        color: _isFocused ? Colors.black54 : Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )),
-    );
   }
 }

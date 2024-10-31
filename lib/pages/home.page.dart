@@ -41,7 +41,14 @@ class _HomePageState extends State<HomePage> {
 
   WatchlistSort? _watchlistSort;
 
+  bool _showHidden = false;
+
   _HomePageState(this.title, this.cookieJar, this.client);
+
+  Future refresh(BuildContext context) async {
+    final items = await client.refresh(_selectedList, username: 'me');
+    return items;
+  }
 
   Future<List<Item>?> fetchItems(BuildContext context) async {
     final prefs = await SharedPreferences.getInstance();
@@ -67,6 +74,9 @@ class _HomePageState extends State<HomePage> {
       });
     }
 
+    final showHidden = prefs.getBool("watchlist.showHidden");
+    _showHidden = showHidden ?? false;
+
     final authorized = await client.authorize();
     if (!authorized) {
       // redirect
@@ -77,8 +87,7 @@ class _HomePageState extends State<HomePage> {
       return [];
     }
     print('get list');
-    final items = await client.getList(_selectedList, username: 'me', sort: _watchlistSort);
-    print(items[0].title);
+    final items = await client.getList(_selectedList, username: 'me', sort: _watchlistSort, showHidden: _showHidden);
     return items;
   }
 
@@ -98,22 +107,18 @@ class _HomePageState extends State<HomePage> {
         actions: <Widget>[
           _getListComponent(context),
           _getSortComponent(context),
-          IconButton(
-            icon: const Icon(
-              Icons.check,
-              // color: Colors.white,
-            ),
-            onPressed: () {
-              // do something
-            },
-          ),
+          _getShowHiddenComponent(context),
           IconButton(
             icon: const Icon(
               Icons.refresh,
               // color: Colors.white,
             ),
-            onPressed: () {
-              // do something
+            onPressed: () async {
+              await refresh(context);
+              setState(() {
+                // will this still refresh my items?
+
+              });
             },
           )
         ],
@@ -149,7 +154,36 @@ class _HomePageState extends State<HomePage> {
     }
     stdout.writeln('get lists');
     final watchlists = await client.getLists();
+    bool foundListId = false;
+    watchlists.forEach((wl) {
+      if (wl.id == _selectedList)
+        foundListId = true;
+    });
+    if (watchlists.length == 0)
+      return watchlists;
+
+    if (!foundListId && watchlists.length > 0) {
+      // setState(() {
+        _selectedList = watchlists[0].id;
+      // });
+    }
     return watchlists;
+  }
+
+  Widget _getShowHiddenComponent(BuildContext context) {
+    final icon = _showHidden ? Icon(Icons.disabled_visible) : Icon(Icons.visibility);
+    return IconButton(
+      icon: icon,
+      onPressed: () async {
+        var newVal = !_showHidden;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('watchlist.showHidden', newVal);
+        setState(() {
+          _showHidden = newVal;
+        });
+        // do something
+      },
+    );
   }
 
   void toggleNextSort() async {
@@ -192,15 +226,15 @@ class _HomePageState extends State<HomePage> {
         subIcon = Icons.arrow_downward;
         break;
       case WatchlistSort.WatchedDesc:
-        mainIcon = Icons.visibility;
+        mainIcon = Icons.schedule;
         subIcon = Icons.arrow_downward;
         break;
       case WatchlistSort.WatchedAsc:
-        mainIcon = Icons.visibility;
+        mainIcon = Icons.schedule;
         subIcon = Icons.arrow_upward;
         break;
       default:
-        mainIcon = Icons.visibility;
+        mainIcon = Icons.schedule;
         subIcon = Icons.arrow_upward;
         break;
     }
@@ -217,7 +251,6 @@ class _HomePageState extends State<HomePage> {
           return KeyEventResult.ignored;
         },
         onFocusChange: (hasFocus) {
-          print("Focused");
         },
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(
           icon: Icon(mainIcon),

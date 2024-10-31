@@ -50,38 +50,40 @@ class WatchlistClient {
   }
 
   Future<List<Item>> getList(String? listId,
-  {String username = "me", WatchlistSort? sort}) async {
+  {String username = "me", WatchlistSort? sort, bool showHidden = false}) async {
     List<Item> items = [];
     if (listId == null) {
       return items;
     }
-    String query = "";
+    Map<String, dynamic> queryParams = Map<String, dynamic>();
+    String sortParam = "least-watched";
     if (sort != null) {
-      query += "?sort=";
       switch(sort) {
         case WatchlistSort.AlphaAsc:
-          query += 'alpha-asc';
+          sortParam = 'alpha-asc';
           break;
         case WatchlistSort.AlphaDesc:
-          query += 'alpha-desc';
+          sortParam = 'alpha-desc';
           break;
         case WatchlistSort.WatchedDesc:
-          query += 'most-watched';
+          sortParam = 'most-watched';
           break;
         case WatchlistSort.WatchedAsc:
-          query += 'least-watched';
-          break;
-        default:
-          query += 'least-watched';
+          sortParam = 'least-watched';
           break;
       }
     }
-    print('/watchlist/$username/$listId/$query');
-    final response = await client.get('/watchlist/$username/$listId/$query');
+    queryParams["sort"] = sortParam;
+    if (showHidden) {
+      queryParams["hidden"] = "true";
+    }
+    print('/watchlist/$username/$listId/');
+    final response = await client.get('/watchlist/$username/$listId/', queryParameters: queryParams);
+    print(response.data.length);
+    print(items.length);
     response.data.forEach((value) => {
-      if (!(value["hidden"] ?? false))
-        items.add(Item(value)
-    )});
+      items.add(Item(value))
+    });
     return items;
   }
 
@@ -95,6 +97,19 @@ class WatchlistClient {
     });
     return lists;
   }
+
+  Future<List<Item>> refresh(String? listId,
+      {String username = "me"}) async {
+    final response = await client.get('/watchlist/$username/$listId');
+
+    List<Item> lists = [];
+
+    response.data.forEach((value) => {
+      lists.add(Item(value))
+    });
+    return lists;
+  }
+
 
   Future<Play> play(int itemId) async {
     final response = await client.post('/play/device-googletv/$itemId/');

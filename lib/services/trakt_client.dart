@@ -28,7 +28,7 @@ class TraktClient {
 
   Future<AccessTokenResponse> pollDevice(CancellationToken cancellationToken, String code, int interval) {
     final Completer<AccessTokenResponse> completer = Completer<AccessTokenResponse>();
-    Timer.periodic(const Duration(seconds: 2), (Timer timer) async {
+    Timer.periodic(const Duration(milliseconds: 500), (Timer timer) async {
       if (cancellationToken.isCancelled) {
         timer.cancel();
         completer.completeError("manually cancelled by owner");

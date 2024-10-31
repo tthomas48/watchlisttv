@@ -1,9 +1,5 @@
-Add playing transition screen
-We need a refresh icon
-Add errors when they come back from play. They will be in the "message" field.
-Add Hide/Show toggle
-Add List selector
-Add Sort toggle
-add placeholder cards for loading list, make 'em dance
+Ok, so I can do this now. I just add a list, and add locals to it.
 
-Netflix test with fix from code
+Add playing transition screen
+Add errors when they come back from play. They will be in the "message" field.
+add placeholder cards for loading list, make 'em dance
