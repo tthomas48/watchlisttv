@@ -4,6 +4,7 @@ import 'package:watchlisttv/services/token_service.dart';
 
 import '../env/env.dart';
 import '../model/item.dart';
+import '../model/watchlist_notification.dart';
 import '../model/play.dart';
 import '../model/watchlist.dart';
 import '../model/watchlist_sort.dart';
@@ -77,14 +78,37 @@ class WatchlistClient {
     if (showHidden) {
       queryParams["hidden"] = "true";
     }
-    print('/watchlist/$username/$listId/');
     final response = await client.get('/watchlist/$username/$listId/', queryParameters: queryParams);
-    print(response.data.length);
-    print(items.length);
     response.data.forEach((value) => {
       items.add(Item(value))
     });
     return items;
+  }
+
+  Future<Map<int, List<WatchlistNotification>>?> getNotifications(String? listId) async {
+    var notifications = new Map<int, List<WatchlistNotification>>();
+    if (listId == null) {
+      return notifications;
+    }
+
+    var response = await client.get('/notifications/$listId/');
+    response.data.forEach((value) {
+      var notification = WatchlistNotification(value);
+      var key = notification.watchableId;
+      if (!notifications.containsKey(key)) {
+        notifications[key] = List<WatchlistNotification>.empty(growable: true);
+      }
+      notifications[key]?.add(notification);
+    });
+    return notifications;
+  }
+
+  Future<bool> clearNotification(String? listId, String? notificationId) async {
+    if (listId == null || notificationId == null) {
+      return false;
+    }
+    var response = await client.delete('/notifications/$listId/$notificationId/');
+    return (response.statusCode ?? 0) == 204;
   }
 
   Future<List<Watchlist>> getLists() async {

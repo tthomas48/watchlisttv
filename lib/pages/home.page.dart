@@ -5,10 +5,13 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:trakt_dart/trakt_dart.dart';
 
 import '../components/grid.dart';
 import '../model/item.dart';
 import '../model/watchlist.dart';
+import '../model/watchlist_data.dart';
+import '../model/watchlist_notification.dart';
 import '../model/watchlist_sort.dart';
 import '../services/watchlist_client.dart';
 import '../theme/theme_colors.dart';
@@ -50,7 +53,7 @@ class _HomePageState extends State<HomePage> {
     return items;
   }
 
-  Future<List<Item>?> fetchItems(BuildContext context) async {
+  Future<bool> populateSelectedList() async {
     final prefs = await SharedPreferences.getInstance();
     var selectedList = prefs.getString('trakt.list');
     if (selectedList != _selectedList) {
@@ -58,8 +61,17 @@ class _HomePageState extends State<HomePage> {
         _selectedList = selectedList;
       });
       // will this trigger an update?
+      return false;
+    }
+    return true;
+  }
+
+  Future<List<Item>?> fetchItems(BuildContext context) async {
+    var success = await populateSelectedList();
+    if (!success) {
       return [];
     }
+    final prefs = await SharedPreferences.getInstance();
     WatchlistSort? selectedWatchList;
     final watchlistSort = prefs.getString("watchlist.sort");
     if (watchlistSort != null) {
@@ -76,19 +88,35 @@ class _HomePageState extends State<HomePage> {
 
     final showHidden = prefs.getBool("watchlist.showHidden");
     _showHidden = showHidden ?? false;
+    final items = await client.getList(_selectedList,
+        username: 'me', sort: _watchlistSort, showHidden: _showHidden);
+    return items;
+  }
 
+  Future<Map<int, List<WatchlistNotification>>?> fetchNotifications(
+      BuildContext context) async {
+    var success = await populateSelectedList();
+    if (!success) {
+      return Map<int, List<WatchlistNotification>>();
+    }
+    final notifications = await client.getNotifications(_selectedList);
+    return notifications;
+  }
+
+  Future<WatchlistData> fetchData(BuildContext context) async {
     final authorized = await client.authorize();
     if (!authorized) {
       // redirect
       Navigator.pushNamed(context, '/login');
-      return null;
+      return new WatchlistData(List<Item>.empty(growable: false),
+          Map<int, List<WatchlistNotification>>());
     }
-    if (_selectedList == null) {
-      return [];
-    }
-    print('get list');
-    final items = await client.getList(_selectedList, username: 'me', sort: _watchlistSort, showHidden: _showHidden);
-    return items;
+    var futures = <Future>[];
+    futures.add(fetchItems(context));
+    futures.add(fetchNotifications(context));
+    var results = await Future.wait(futures);
+    var watchlistData = new WatchlistData(results[0], results[1]);
+    return watchlistData;
   }
 
   @override
@@ -117,18 +145,36 @@ class _HomePageState extends State<HomePage> {
               await refresh(context);
               setState(() {
                 // will this still refresh my items?
-
               });
             },
           )
         ],
       ),
-      body: FutureBuilder<List<Item>?>(
-          future: fetchItems(context),
+      body: FutureBuilder<WatchlistData?>(
+          future: fetchData(context),
           builder: (buildContext, snapshot) {
             if (snapshot.hasError) {
-              return Center(
-                  child: Text(snapshot.error?.toString() ?? "Unknown Error"));
+              return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                              children: [
+                            Center(
+                              child: Text(
+                                  snapshot.error?.toString() ?? "Unknown Error",
+                                  style: TextStyle(
+                                    color: ThemeColors.accentColor,
+                                    backgroundColor: Colors.black12,
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w600,
+                                  )),
+                            )
+                          ])
+                        ])
+                  ]);
             }
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
@@ -137,7 +183,9 @@ class _HomePageState extends State<HomePage> {
               // Center is a layout widget. It takes a single child and positions it
               // in the middle of the parent.
               child: Grid(
-                  items: snapshot.data ?? [],
+                  items: snapshot.data?.items ?? [],
+                  notifications: snapshot.data?.notifications ??
+                      Map<int, List<WatchlistNotification>>(),
                   cookieJar: cookieJar,
                   watchlistClient: client),
             );
@@ -156,22 +204,21 @@ class _HomePageState extends State<HomePage> {
     final watchlists = await client.getLists();
     bool foundListId = false;
     watchlists.forEach((wl) {
-      if (wl.id == _selectedList)
-        foundListId = true;
+      if (wl.id == _selectedList) foundListId = true;
     });
-    if (watchlists.length == 0)
-      return watchlists;
+    if (watchlists.length == 0) return watchlists;
 
     if (!foundListId && watchlists.length > 0) {
       // setState(() {
-        _selectedList = watchlists[0].id;
+      _selectedList = watchlists[0].id;
       // });
     }
     return watchlists;
   }
 
   Widget _getShowHiddenComponent(BuildContext context) {
-    final icon = _showHidden ? Icon(Icons.disabled_visible) : Icon(Icons.visibility);
+    final icon =
+        _showHidden ? Icon(Icons.disabled_visible) : Icon(Icons.visibility);
     return IconButton(
       icon: icon,
       onPressed: () async {
@@ -188,7 +235,7 @@ class _HomePageState extends State<HomePage> {
 
   void toggleNextSort() async {
     WatchlistSort newSort;
-    switch(_watchlistSort) {
+    switch (_watchlistSort) {
       case WatchlistSort.AlphaAsc:
         newSort = WatchlistSort.AlphaDesc;
         break;
@@ -206,7 +253,8 @@ class _HomePageState extends State<HomePage> {
         break;
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('watchlist.sort', EnumToString.convertToString(newSort));
+    await prefs.setString(
+        'watchlist.sort', EnumToString.convertToString(newSort));
     setState(() {
       _watchlistSort = newSort;
     });
@@ -215,8 +263,7 @@ class _HomePageState extends State<HomePage> {
   Widget _getSortComponent(BuildContext context) {
     IconData mainIcon;
     IconData subIcon;
-    switch(_watchlistSort) {
-
+    switch (_watchlistSort) {
       case WatchlistSort.AlphaAsc:
         mainIcon = Icons.abc;
         subIcon = Icons.arrow_upward;
@@ -250,15 +297,15 @@ class _HomePageState extends State<HomePage> {
           }
           return KeyEventResult.ignored;
         },
-        onFocusChange: (hasFocus) {
-        },
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [IconButton(
-          icon: Icon(mainIcon),
-          isSelected: true,
-          onPressed: () {
-            toggleNextSort();
-          },
-        ),
+        onFocusChange: (hasFocus) {},
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          IconButton(
+            icon: Icon(mainIcon),
+            isSelected: true,
+            onPressed: () {
+              toggleNextSort();
+            },
+          ),
           Icon(subIcon, size: 10),
         ]));
   }

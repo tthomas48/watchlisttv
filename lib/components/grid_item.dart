@@ -5,43 +5,40 @@ import 'package:android_intent_plus/android_intent.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flip_card/flip_card_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:watchlisttv/components/tv_focus.dart';
 
 import '../env/env.dart';
 import '../model/item.dart';
+import '../model/watchlist_notification.dart';
 import '../services/watchlist_client.dart';
 import 'grid_flipcard.dart';
 
 class GridItem extends StatefulWidget {
   final Item item;
 
+  final List<WatchlistNotification>? notifications;
+
   final CookieJar cookieJar;
 
   final WatchlistClient watchlistClient;
 
-  const GridItem({super.key, required this.item, required this.cookieJar, required this.watchlistClient});
+  const GridItem({super.key,
+    required this.item,
+    required this.notifications,
+    required this.cookieJar,
+    required this.watchlistClient});
 
   @override
-  _GridItemState createState() => _GridItemState(item, cookieJar, watchlistClient);
+  State<StatefulWidget> createState() {
+    return _GridItemState();
+  }
 }
 
 class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
-  final Item item;
-
-  final CookieJar cookieJar;
-
-  final WatchlistClient watchlistClient;
-
   bool _isFocused = false;
 
-  bool _isLongPress = false;
-
-  Timer? _longPressTimer;
-
-  _GridItemState(this.item, this.cookieJar, this.watchlistClient);
-
   Future<String> _fetchCookies(String baseImgUrl) async {
-    var cookies = await cookieJar.loadForRequest(Uri.parse(baseImgUrl));
+    var cookies = await widget.cookieJar.loadForRequest(Uri.parse(baseImgUrl));
     return cookies.map((cookie) => '${cookie.name}=${cookie.value}').join('; ');
   }
 
@@ -77,8 +74,28 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
     _flipCardController.toggleCard();
   }
 
+  void _focus() {
+    _controller.forward();
+    setState(() {
+      _isFocused = true;
+    });
+  }
+
+  void _blur() {
+    _controller.reset();
+    setState(() {
+      _isFocused = false;
+    });
+  }
+
   void _play() async {
-    final play = await watchlistClient.play(item.id);
+    var notifications = widget.notifications ?? [];
+    for(var i = 0; i < notifications.length; i++) {
+      await widget.watchlistClient.clearNotification(
+          widget.item.traktListId, notifications[i].id.toString());
+    }
+
+    final play = await widget.watchlistClient.play(widget.item.id);
     // TODO: more platforms? can I do web? How would that change longpress?
     if (Platform.isAndroid) {
       String component = play.component ?? "/";
@@ -114,64 +131,21 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          return Focus(
-              onKeyEvent: (FocusNode node, KeyEvent event) {
-                if (event.logicalKey != LogicalKeyboardKey.select) {
-                  return KeyEventResult.ignored;
-                }
-                if (event is KeyDownEvent) {
-                  // Start timer when key is pressed down
-                  _longPressTimer ??= Timer(const Duration(milliseconds: 500), () {
-                      setState(() {
-                        _isLongPress = true;
-                      });
-                      // Handle long press action here
-                    });
-                } else if (event is KeyUpEvent) {
-                  if (_isLongPress) {
-                    _flipCard();
-                  } else {
-                    _play();
-                  }
-                  // Cancel timer when key is released
-                  if (_longPressTimer != null) {
-                    _longPressTimer?.cancel();
-                    _longPressTimer = null;
-                  }
-                  setState(() {
-                    _isLongPress = false;
-                  });
-                }
-                return KeyEventResult.handled;
-              },
-              onFocusChange: (hasFocus) {
-                setState(() {
-                  _isFocused = hasFocus;
-                  if (hasFocus) {
-                    _controller.forward();
-                  } else {
-                    _controller.reset();
-                  }
-                });
-              },
-              child: GestureDetector(
-                  onTap: () {
-                    // card tapped
-                  },
-                  onLongPress: () {
-                    _flipCard();
-                  },
-                  child: GridFlipCard(
-                    flipCardController: _flipCardController,
-                    animation: _animation,
-                    isFocused: _isFocused,
-                    baseImgUrl: baseImgUrl,
-                    editUrl: editUrl,
-                    item: item,
-                    cookie: snapshot.data,
-                  )
-          )
-          );
+          return TVFocus(
+              onClick: _play,
+              onLongPress: _flipCard,
+              onFocus: _focus,
+              onBlur: _blur,
+              child: GridFlipCard(
+                flipCardController: _flipCardController,
+                animation: _animation,
+                isFocused: _isFocused,
+                baseImgUrl: baseImgUrl,
+                editUrl: editUrl,
+                item: widget.item,
+                cookie: snapshot.data,
+                notifications: widget.notifications,
+              ));
         });
   }
 }

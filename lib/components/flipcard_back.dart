@@ -4,20 +4,28 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../model/item.dart';
 import '../theme/theme_colors.dart';
 
-class FlipCardBack extends StatelessWidget {
-  const FlipCardBack(
-      {super.key,
-      required this.animation,
-      required this.isFocused,
-      required this.editUrl,
-      required this.item,
-      this.cookie});
+class FlipCardBack extends StatefulWidget {
+  const FlipCardBack({super.key,
+    required this.animation,
+    required this.isFocused,
+    required this.editUrl,
+    required this.item,
+    this.cookie});
 
   final String editUrl;
   final String? cookie;
   final Item item;
   final Animation<double> animation;
   final bool isFocused;
+
+  @override
+  State<StatefulWidget> createState() {
+    return _FlipCardBackState();
+  }
+
+
+}
+class _FlipCardBackState extends State<FlipCardBack> {
 
   @override
   Widget build(BuildContext context) {
@@ -31,16 +39,16 @@ class FlipCardBack extends StatelessWidget {
       elevation: 5,
       margin: const EdgeInsets.all(10),
       child: ScaleTransition(
-          scale: animation,
+          scale: widget.animation,
           child: Container(
             width: 300,
             height: 200,
             decoration: BoxDecoration(
               // borderRadius: BorderRadius.circular(10),
-              border: isFocused
+              border: widget.isFocused
                   ? Border.all(color: ThemeColors.primaryColor, width: 1)
                   : Border.all(color: Colors.transparent, width: 1),
-              boxShadow: isFocused
+              boxShadow: widget.isFocused
                   ? [
                 BoxShadow(
                     color: ThemeColors.accentColor.withOpacity(0.5),
@@ -58,7 +66,7 @@ class FlipCardBack extends StatelessWidget {
               children: [
                 // Background Image
                 QrImageView(
-                  data: '$editUrl/${item.id}',
+                  data: '${widget.editUrl}/${widget.item.id}',
                   version: QrVersions.auto,
                   size: 300.0,
                 ),
@@ -70,11 +78,11 @@ class FlipCardBack extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     color:
-                    isFocused ? ThemeColors.accentColor : Colors.black54,
+                    widget.isFocused ? ThemeColors.accentColor : Colors.black54,
                     child: Text(
                       "Edit",
                       style: TextStyle(
-                        color: isFocused ? Colors.black54 : Colors.white,
+                        color: widget.isFocused ? Colors.black54 : Colors.white,
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                       ),

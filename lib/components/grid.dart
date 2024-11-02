@@ -2,17 +2,20 @@ import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/cupertino.dart';
 
 import '../model/item.dart';
+import '../model/watchlist_notification.dart';
 import '../services/watchlist_client.dart';
 import 'grid_item.dart';
 
 class Grid extends StatelessWidget {
   final List<Item> items;
 
+  final Map<int, List<WatchlistNotification>> notifications;
+
   final CookieJar cookieJar;
 
   final WatchlistClient watchlistClient;
 
-  const Grid({super.key, required this.items, required this.cookieJar, required this.watchlistClient});
+  const Grid({super.key, required this.items, required this.notifications, required this.cookieJar, required this.watchlistClient});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +28,7 @@ class Grid extends StatelessWidget {
       ),
       itemCount: items.length ?? 0,
       itemBuilder: (context, index) {
-        return GridItem(item: items[index], cookieJar: cookieJar, watchlistClient: watchlistClient, key: Key('wl-${items[index].id}'));
+        return GridItem(item: items[index], notifications: notifications[items[index].id], cookieJar: cookieJar, watchlistClient: watchlistClient, key: Key('wl-${items[index].id}'));
       },
     );
   }
