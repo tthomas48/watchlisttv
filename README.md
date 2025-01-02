@@ -14,4 +14,6 @@ Building for install on TV
 
 ```
 flutter build apk --dart-define-from-file=.env
+adb connect <device IP>
+adb install build\app\outputs\flutter-apk\app-release.apk
 ```

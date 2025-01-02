@@ -103,8 +103,8 @@ class WatchlistClient {
     return notifications;
   }
 
-  Future<bool> clearNotification(String? listId, String? notificationId) async {
-    if (listId == null || notificationId == null) {
+  Future<bool> clearNotification(String? listId, int notificationId) async {
+    if (listId == null) {
       return false;
     }
     var response = await client.delete('/notifications/$listId/$notificationId/');

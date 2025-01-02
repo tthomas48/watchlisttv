@@ -5,7 +5,7 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:trakt_dart/trakt_dart.dart';
+import 'package:sentry/sentry.dart';
 
 import '../components/grid.dart';
 import '../model/item.dart';

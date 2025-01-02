@@ -41,13 +41,14 @@ dependencies:
   cookie_jar: ^4.0.8
   flutter_secure_storage: ^9.0.0
   trakt_dart: ^1.0.1
-  envied: ^0.5.4+1
+  envied: ^1.0.0
   flip_card: ^0.7.0
   android_intent_plus: ^5.0.2
   shared_preferences: ^2.2.3
   enum_to_string: ^2.0.1
 
   qr_flutter: any
+  sentry_flutter: ^8.12.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -57,8 +58,8 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
-  envied_generator: ^0.5.4+1
+  flutter_lints: ^5.0.0
+  envied_generator: ^1.0.0
   build_runner: ^2.4.11
 
 # For information on the generic Dart part of this file, see the

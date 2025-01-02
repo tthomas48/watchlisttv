@@ -1,6 +1,7 @@
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:watchlisttv/pages/home.page.dart';
 import 'package:watchlisttv/pages/login.page.dart';
 import 'package:watchlisttv/services/token_service.dart';
@@ -8,8 +9,21 @@ import 'package:watchlisttv/services/trakt_client.dart';
 import 'package:watchlisttv/services/watchlist_client.dart';
 import 'package:watchlisttv/theme/theme_colors.dart';
 
+import 'env/env.dart';
+
 void main() {
-  runApp(const MyApp());
+  if (Env.sentryDsn.isNotEmpty) {
+    SentryFlutter.init(
+            (options) =>
+        options
+          ..dsn = Env.sentryDsn // if hard coding GlitchTip DSN
+          ..tracesSampleRate = 0.01 // Performance trace 1% of events
+          ..enableAutoSessionTracking = false,
+        appRunner: () => runApp(MyApp())
+    );
+  } else {
+    runApp(MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {

@@ -12,4 +12,7 @@ final class Env {
 
   @EnviedField(varName: 'WATCHLIST_BASE',obfuscate: true)
   static final String watchlistBase = _Env.watchlistBase;
+
+  @EnviedField(varName: 'SENTRY_DSN',obfuscate: true)
+  static final String sentryDsn = _Env.sentryDsn;
 }

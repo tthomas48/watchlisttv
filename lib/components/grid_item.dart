@@ -92,7 +92,7 @@ class _GridItemState extends State<GridItem> with TickerProviderStateMixin {
     var notifications = widget.notifications ?? [];
     for(var i = 0; i < notifications.length; i++) {
       await widget.watchlistClient.clearNotification(
-          widget.item.traktListId, notifications[i].id.toString());
+          widget.item.traktListId, notifications[i].id);
     }
 
     final play = await widget.watchlistClient.play(widget.item.id);
